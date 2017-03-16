@@ -48,9 +48,9 @@ namespace NetParser
             Action  CustomAction=null 
          ) { 
             StateTransition transition = new StateTransition() { 
-                Before = before,
+                Previous = before,
                 Pattern = pattern,
-                After = after,
+                Next = after,
                 Return = ret,
                 CustomWork = CustomAction
             };
