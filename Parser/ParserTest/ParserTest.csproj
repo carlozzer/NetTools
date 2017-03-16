@@ -55,9 +55,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Parser\Parser.csproj">
-      <Project>{9bbdf58e-9292-4c7d-8e3b-82d7e04aff06}</Project>
-      <Name>Parser</Name>
+    <ProjectReference Include="..\NetParser\NetParser.csproj">
+      <Project>{0e2e42f0-b2b9-4ffc-b5ef-7f5aa446a650}</Project>
+      <Name>NetParser</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />
