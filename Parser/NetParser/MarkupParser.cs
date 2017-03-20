@@ -4,14 +4,14 @@ namespace NetParser
 {
     public class MarkupParser
     {
-        StatesMachine machine;
+        Automata machine;
 
         public MarkupParser() {
             
-            machine = new StatesMachine();
+            machine = new Automata();
 
-            machine.Add( "INIT", "<" , "OPEN_TAG" );
-            machine.Add( "OPEN_TAG", "!" , "DECLARATION" );
+            machine.Add( Automata.START, "<" , MarkupStates.OPEN_TAG );
+            machine.Add( MarkupStates.OPEN_TAG, "!" , MarkupStates.DECLARATION );
         }
 
         public void Parse( string markup ) { 
