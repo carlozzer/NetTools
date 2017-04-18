@@ -47,6 +47,11 @@
     <Compile Include="State.cs" />
     <Compile Include="StateTransition.cs" />
     <Compile Include="Token.cs" />
+    <Compile Include="XmlLexer.cs" />
+    <Compile Include="XmlParser.cs" />
+    <Compile Include="XmlStates.cs" />
+    <Compile Include="XmlStateTransition.cs" />
+    <Compile Include="XmlToken.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

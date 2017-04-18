@@ -16,8 +16,12 @@ namespace ParserTest
             string markup = wc.DownloadString("http://www.wikipedia.org");
 
             // ACT
-            MarkupParser parser = new MarkupParser();
-            parser.Parse( markup );
+            // MarkupParser parser = new MarkupParser();
+            // parser.Parse( markup );
+
+            XmlLexer lexer = new XmlLexer();
+            lexer.Read( markup );
+
 
             // ASSERT
             Assert.AreEqual(1,1);
