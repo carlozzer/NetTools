@@ -13,7 +13,8 @@ namespace ParserTest
         {
             // ARRANGE
             WebClient wc = new WebClient();
-            string markup = wc.DownloadString("http://www.wikipedia.org");
+            //string markup = wc.DownloadString("http://www.wikipedia.org");
+            string markup = wc.DownloadString("https://www.w3schools.com/xml/note.xml");
 
             // ACT
             // MarkupParser parser = new MarkupParser();

@@ -9,8 +9,8 @@ namespace NetParser
 {
     public class XmlLexer
     {
-        const string ALPHANUMERIC = "[a-zA-Z0-9]";
-        const string NON_ALPHANUMERIC = "^[a-zA-Z0-9]";
+        const string ALPHANUMERIC = @"\w";
+        const string NON_ALPHANUMERIC = @"\W";
 
         string current_state;
         int read_offset;
@@ -64,11 +64,11 @@ namespace NetParser
             XmlStateTransition transition = FindTransition( c );
             if ( transition != null ) { 
 
-                this.current_token.lexeme = string.Concat( this.current_token.lexeme , c );
-
                 if ( transition.acceptance ) { 
                     this.tokens.Add ( this.current_token );
                     this.current_token = new XmlToken();
+                } else { 
+                    this.current_token.lexeme = string.Concat( this.current_token.lexeme , c );
                 }
 
                 this.current_state = transition.state_out;
@@ -89,7 +89,7 @@ namespace NetParser
             this.transition_table = new List<XmlStateTransition>();
             
             this.AddStateTransition( "START" , "<" , "<" );
-            this.AddStateTransition( "<" , "^<" , "START" , acceptance:true, back:1 );
+            this.AddStateTransition( "<" , "[^<]" , "START" , acceptance:true, back:1 );
 
             this.AddStateTransition( "START" , ALPHANUMERIC , "ALPHA" );
             this.AddStateTransition( "ALPHA" , NON_ALPHANUMERIC , "START" , true, 1 );
