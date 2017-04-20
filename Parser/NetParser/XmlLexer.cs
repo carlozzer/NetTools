@@ -9,8 +9,10 @@ namespace NetParser
 {
     public class XmlLexer
     {
-        const string ALPHANUMERIC = @"\w";
-        const string NON_ALPHANUMERIC = @"\W";
+        const string PATTERN_ALPHANUMERIC = @"\w";
+        const string PATTERN_NON_ALPHANUMERIC = @"\W";
+
+        const string STATE_INIT = "INIT";
 
         string current_state;
         int read_offset;
@@ -42,38 +44,51 @@ namespace NetParser
         {
             XmlStateTransition ret = null;
 
-            foreach ( XmlStateTransition transition in transition_table ) { 
+            bool found = false;
+            int current = 0;
 
-                if ( transition.state_in == this.current_state ) { 
+            while ( transition_table.Count > current && !found ) { 
 
-                    if ( Regex.IsMatch( c.ToString() , transition.pattern ) ) {
+                if ( transition_table[current].state_in == this.current_state ) { 
 
-                        ret = transition;
+                    if ( Regex.IsMatch( c.ToString() , transition_table[current].pattern ) ) {
+
+                        ret = transition_table[current];
+                        found = true;
 
                     }
                 }
+                current++;
             }
 
             return ret;
         }
 
+        void Accumulate( char c ) { 
+            this.current_token.lexeme = string.Concat( this.current_token.lexeme , c );
+        }
+
         string TransitionFunction( char c ) { 
 
-            string ret = "START";
+            string ret = STATE_INIT;
 
             XmlStateTransition transition = FindTransition( c );
             if ( transition != null ) { 
 
-                if ( transition.acceptance ) { 
-                    this.tokens.Add ( this.current_token );
-                    this.current_token = new XmlToken();
-                } else { 
-                    this.current_token.lexeme = string.Concat( this.current_token.lexeme , c );
+                if ( transition.back == 0 ) {
+                    Accumulate ( c );
                 }
 
                 this.current_state = transition.state_out;
                 this.read_offset -= transition.back;
 
+                if ( transition.acceptance ) { 
+
+                    this.current_token.type = transition.back > 0 ? transition.state_out : transition.state_in;
+                    this.tokens.Add ( this.current_token );
+                    this.current_token = new XmlToken();
+
+                } 
             }
 
             return ret;
@@ -81,20 +96,51 @@ namespace NetParser
 
         public XmlLexer() {
             
-            this.current_state = "START";
+            this.current_state = STATE_INIT;
             this.read_offset = 0;
             this.current_token = new XmlToken();
             this.tokens = new List<XmlToken>();
 
             this.transition_table = new List<XmlStateTransition>();
             
-            this.AddStateTransition( "START" , "<" , "<" );
-            this.AddStateTransition( "<" , "[^<]" , "START" , acceptance:true, back:1 );
+            this.AddStateTransition( STATE_INIT , "'" , "STRING" );
+            this.AddStateTransition( "STRING" , "[^']" , "STRING" );
+            this.AddStateTransition( "STRING" , "'" , STATE_INIT , acceptance:true );
 
-            this.AddStateTransition( "START" , ALPHANUMERIC , "ALPHA" );
-            this.AddStateTransition( "ALPHA" , NON_ALPHANUMERIC , "START" , true, 1 );
+            this.AddStateTransition( STATE_INIT , "\"" , "STRINGD" );
+            this.AddStateTransition( "STRINGD" , "[^\"]" , "STRINGD" );
+            this.AddStateTransition( "STRINGD" , "\"" , STATE_INIT , acceptance:true );
+
+            this.AddStateTransition( STATE_INIT , "<" , "<" );
+            
+            this.AddStateTransition( "<" , "[?]", "<?");
+            this.AddStateTransition( "<?" , "[xX]", "<?x");
+            this.AddStateTransition( "<?x" , "[mM]", "START_PROLOG");
+            this.AddStateTransition( "START_PROLOG" , "[lL]", STATE_INIT , acceptance:true );
+
+            this.AddStateTransition( "<" , "!", "DECLARATION");
+            this.AddStateTransition( "DECLARATION" , "-" , "<!-");
+            this.AddStateTransition( "<!-", "-" , "COMMENT" , acceptance:true );
+            this.AddStateTransition( "DECLARATION" , "[^!]" , STATE_INIT , acceptance:true , back:1 );
+            // DOCTYPE DTD
+            // </
+            this.AddStateTransition( "<" , "[^<]" , STATE_INIT , acceptance:true, back:1 );
 
 
+
+            this.AddStateTransition( STATE_INIT , PATTERN_ALPHANUMERIC , "ALPHA" );
+            this.AddStateTransition( "ALPHA" , PATTERN_ALPHANUMERIC , "ALPHA" );
+            this.AddStateTransition( "ALPHA" , PATTERN_NON_ALPHANUMERIC , STATE_INIT , true, 1 );
+            this.AddStateTransition( STATE_INIT , "=" , "=" );
+            this.AddStateTransition( "=" , "[^=]" , STATE_INIT , acceptance:true , back:1 );
+
+            // CLOSING
+            this.AddStateTransition( STATE_INIT , "[?]", "END_PROLOG");
+            this.AddStateTransition( "END_PROLOG" , ">", STATE_INIT , acceptance:true );
+
+            this.AddStateTransition( STATE_INIT , ">" , ">" );
+            this.AddStateTransition( ">" , "[^>]" , STATE_INIT , acceptance:true, back:1 );
+            
         }
 
         public List<XmlToken> GetTokens() { 

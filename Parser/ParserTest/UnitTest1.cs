@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Net;
 using NetParser;
+using System.Diagnostics;
 
 namespace ParserTest
 {
@@ -22,6 +23,12 @@ namespace ParserTest
 
             XmlLexer lexer = new XmlLexer();
             lexer.Read( markup );
+
+
+            // OUTPUT
+            foreach ( XmlToken tok in lexer.GetTokens()) {
+                Trace.WriteLine( string.Format(" ['{0}',{1}]", tok.lexeme, tok.type) );
+            }
 
 
             // ASSERT
