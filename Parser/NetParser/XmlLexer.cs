@@ -9,7 +9,7 @@ namespace NetParser
 {
     public class XmlLexer
     {
-        const string PATTERN_ALPHANUMERIC = @"\w";
+        const string PATTERN_ALPHANUMERIC = @"[\w'.,;:]";
         const string PATTERN_NON_ALPHANUMERIC = @"\W";
 
         const string STATE_INIT = "INIT";
@@ -77,6 +77,7 @@ namespace NetParser
 
                 if ( transition.back == 0 ) {
                     Accumulate ( c );
+                    this.current_token.type = transition.state_out;
                 }
 
                 this.current_state = transition.state_out;
@@ -84,9 +85,9 @@ namespace NetParser
 
                 if ( transition.acceptance ) { 
 
-                    this.current_token.type = transition.back > 0 ? transition.state_out : transition.state_in;
                     this.tokens.Add ( this.current_token );
                     this.current_token = new XmlToken();
+                    this.current_state = STATE_INIT;
 
                 } 
             }
@@ -105,41 +106,57 @@ namespace NetParser
             
             this.AddStateTransition( STATE_INIT , "'" , "STRING" );
             this.AddStateTransition( "STRING" , "[^']" , "STRING" );
-            this.AddStateTransition( "STRING" , "'" , STATE_INIT , acceptance:true );
+            this.AddStateTransition( "STRING" , "'" , "STRING" , acceptance:true );
 
             this.AddStateTransition( STATE_INIT , "\"" , "STRINGD" );
             this.AddStateTransition( "STRINGD" , "[^\"]" , "STRINGD" );
-            this.AddStateTransition( "STRINGD" , "\"" , STATE_INIT , acceptance:true );
+            this.AddStateTransition( "STRINGD" , "\"" , "STRINGD" , acceptance:true );
 
             this.AddStateTransition( STATE_INIT , "<" , "<" );
             
             this.AddStateTransition( "<" , "[?]", "<?");
             this.AddStateTransition( "<?" , "[xX]", "<?x");
-            this.AddStateTransition( "<?x" , "[mM]", "START_PROLOG");
-            this.AddStateTransition( "START_PROLOG" , "[lL]", STATE_INIT , acceptance:true );
+            this.AddStateTransition( "<?x" , "[mM]", "<?xm");
+            this.AddStateTransition( "<?xm" , "[lL]", "START_PROLOG", acceptance:true );
 
             this.AddStateTransition( "<" , "!", "DECLARATION");
             this.AddStateTransition( "DECLARATION" , "-" , "<!-");
             this.AddStateTransition( "<!-", "-" , "COMMENT" , acceptance:true );
-            this.AddStateTransition( "DECLARATION" , "[^!]" , STATE_INIT , acceptance:true , back:1 );
+            //this.AddStateTransition( "DECLARATION" , "[^-]" , STATE_INIT , acceptance:true , back:1 );
             // DOCTYPE DTD
-            // </
-            this.AddStateTransition( "<" , "[^<]" , STATE_INIT , acceptance:true, back:1 );
 
+            this.AddStateTransition( "DECLARATION", "[" , "<![" );
+            this.AddStateTransition( "<![", "C" , "<![C" );
+            this.AddStateTransition( "<![C", "D" , "<![CD" );
+            this.AddStateTransition( "<![CD", "A" , "<![CDA" );
+            this.AddStateTransition( "<![CDA", "T" , "<![CDAT" );
+            this.AddStateTransition( "<![CDAT", "A" , "<![CDATA" );
+            this.AddStateTransition( "<![CDATA", "[" , "START_CDATA" , acceptance:true );
+            
+            this.AddStateTransition( "<" , "[/]" , "</" , acceptance:true );
+
+            this.AddStateTransition( "<" , "[^?!/]" , "<" , acceptance:true , back:1 );
 
 
             this.AddStateTransition( STATE_INIT , PATTERN_ALPHANUMERIC , "ALPHA" );
             this.AddStateTransition( "ALPHA" , PATTERN_ALPHANUMERIC , "ALPHA" );
-            this.AddStateTransition( "ALPHA" , PATTERN_NON_ALPHANUMERIC , STATE_INIT , true, 1 );
-            this.AddStateTransition( STATE_INIT , "=" , "=" );
-            this.AddStateTransition( "=" , "[^=]" , STATE_INIT , acceptance:true , back:1 );
+            this.AddStateTransition( "ALPHA" , PATTERN_NON_ALPHANUMERIC , "ALPHA" , true, 1 );
+
+            this.AddStateTransition( STATE_INIT , "=" , "=" , acceptance:true );
 
             // CLOSING
-            this.AddStateTransition( STATE_INIT , "[?]", "END_PROLOG");
-            this.AddStateTransition( "END_PROLOG" , ">", STATE_INIT , acceptance:true );
+            this.AddStateTransition( STATE_INIT , "[?]", "?");
+            this.AddStateTransition( "?" , ">", "END_PROLOG" , acceptance:true );
 
-            this.AddStateTransition( STATE_INIT , ">" , ">" );
-            this.AddStateTransition( ">" , "[^>]" , STATE_INIT , acceptance:true, back:1 );
+            this.AddStateTransition( "]" , "]", "]" );
+            this.AddStateTransition( "]" , "]", "]]" );
+            this.AddStateTransition( "]]" , ">", "END_CDATA" , acceptance:true );
+
+            this.AddStateTransition( STATE_INIT , "/" , "/" );
+            this.AddStateTransition( "/" , ">" , "/>" , acceptance:true );
+
+            this.AddStateTransition( STATE_INIT , ">" , ">" , acceptance:true );
+            
             
         }
 

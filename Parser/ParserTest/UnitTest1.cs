@@ -15,7 +15,22 @@ namespace ParserTest
             // ARRANGE
             WebClient wc = new WebClient();
             //string markup = wc.DownloadString("http://www.wikipedia.org");
-            string markup = wc.DownloadString("https://www.w3schools.com/xml/note.xml");
+            //string markup = wc.DownloadString("https://www.w3schools.com/xml/note.xml");
+
+            string markup = @" <Query>
+ <Where>
+  <And>
+   <Gt>
+    <FieldRef Name='Quantity' />
+    <Value Type='Number'>0</Value>
+   </Gt>
+   <Leq>
+    <FieldRef Name='Price' />
+    <Value Type='Number'>2000</Value>
+   </Leq>
+  </And>
+ </Where>
+</Query>";
 
             // ACT
             // MarkupParser parser = new MarkupParser();
@@ -24,12 +39,14 @@ namespace ParserTest
             XmlLexer lexer = new XmlLexer();
             lexer.Read( markup );
 
+            //// OUTPUT
+            //foreach ( XmlToken tok in lexer.GetTokens()) {
+            //    Trace.WriteLine( string.Format(" ['{0}',{1}]", tok.lexeme, tok.type) );
+            //}
 
-            // OUTPUT
-            foreach ( XmlToken tok in lexer.GetTokens()) {
-                Trace.WriteLine( string.Format(" ['{0}',{1}]", tok.lexeme, tok.type) );
-            }
-
+            XmlParser parser = new XmlParser();
+            parser.Parse( lexer.GetTokens() );
+            parser.TraceTree();
 
             // ASSERT
             Assert.AreEqual(1,1);
