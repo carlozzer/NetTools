@@ -40,10 +40,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Caml\CamlBuilder.cs" />
-    <Compile Include="Caml\CamlBuilderWhere.cs" />
+    <Compile Include="Caml\CamlQueryWhere.cs" />
     <Compile Include="Caml\CamlQuery.cs" />
-    <Compile Include="Caml\CamlTreeNode.cs" />
+    <Compile Include="Caml\CamlQueryOperator.cs" />
     <Compile Include="MarkupParser.cs" />
     <Compile Include="MarkupStates.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
