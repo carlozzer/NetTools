@@ -9,12 +9,27 @@ using System.Xml;
 
 namespace NetParser
 {
+    public enum XmlParserFlags {
+        
+        idle,
+        is_opening,
+        is_closing,
+        expect_attr,  
+        expect_equal, 
+        expect_value 
+
+    }
+
     public class XmlParser
     {
         #region XML TREE
 
         XmlDocument _xml;
         XmlNode _current; 
+
+        public XmlDocument Tree { get { 
+            return _xml;
+        } }
 
         void EnsureDocument () { 
 
@@ -24,14 +39,30 @@ namespace NetParser
             }
         }
 
-        void AddElement ( string element ,  ) { 
+        void AddElement ( string element , List<string[]> attributes ) { 
 
             this.EnsureDocument();
             XmlElement new_element = _xml.CreateElement( element );
             
+            if ( attributes != null && attributes.Count > 0 ) { 
+
+                foreach ( string[] attr in attributes ) { 
+
+                    new_element.SetAttribute( attr[0] , attr[1] );
+
+                }
+
+            }
+
             _current = _current == null ? 
                 _xml.AppendChild( new_element ) :
                 _current.AppendChild( new_element );
+
+        }
+
+        void AddInnerText ( string text ) { 
+
+            _current.InnerText += text;
 
         }
 
@@ -51,10 +82,15 @@ namespace NetParser
 
         #region Attributes
 
-        NameValueCollection all_attributes;
+        string[] current_attr = new string[2];
+        List<string[]> all_attributes;
 
         void ResetAttributes() { 
-            all_attributes = new NameValueCollection();
+            all_attributes = new List<string[]>();
+        }
+
+        void ResetCurrentAttribute() { 
+            current_attr = new string[2];
         }
 
         void EnsureAttributes() { 
@@ -64,22 +100,16 @@ namespace NetParser
         void AccumulateAttribute ( string[] attr ) { 
 
             EnsureAttributes();
-            all_attributes.Add( attr[0] , attr[1] );
+            all_attributes.Add( attr );
         }
-        
-        #endregion
 
+        #endregion
 
         public void Parse( List<XmlToken> tokens ) { 
 
-            // flags
-            bool is_opening = false;
-            bool is_closing = false;
-            bool is_attr    = false;
-            bool is_value   = false;
-
             string current_element = "";
-            string[] current_attr = new string[2];
+            bool inserted = false;
+            XmlParserFlags flag = XmlParserFlags.idle;
 
             if ( tokens != null && tokens.Count > 0 ) { 
 
@@ -87,60 +117,95 @@ namespace NetParser
 
                     if ( token.type == "<" ) { 
                          
-                        is_closing = false;
-                        is_attr    = false;
-                        is_value   = false;
-                        is_opening = true;
-
+                        flag = XmlParserFlags.is_opening;
+                        inserted = false;
+      
                     }
 
                     if ( token.type == "</" || token.type == "/>" ) {
-                        
-                        is_closing = true;
-                        is_attr    = false;
-                        is_value   = false;
-                        is_opening = false;
+      
+                        flag = XmlParserFlags.is_closing;
+                 
                     }
 
                     if ( token.type == "=" ) {
-                        is_value = true;
+                        
+                        flag = XmlParserFlags.expect_value;
                     }
+
+                    if ( token.type == "STRING" || token.type == "STRINGD" ) { 
+
+                        if ( flag == XmlParserFlags.expect_value ) {
+                            
+                            current_attr[1] = token.lexeme.Replace("\"",string.Empty).Replace("'",string.Empty);
+                            AccumulateAttribute( current_attr );
+                            flag = XmlParserFlags.expect_attr;
+
+                        }
+
+                    } 
 
                     if ( token.type == "ALPHA" ) { 
 
-                        if ( is_value ) { 
+                        if ( flag == XmlParserFlags.idle ) {
+                            
+                            AddInnerText( token.lexeme );
+
+                        }
+
+                        if ( flag == XmlParserFlags.expect_equal ) {
+
+                            AccumulateAttribute( current_attr );
+                            flag = XmlParserFlags.expect_attr;
+
+                        }
+
+                        if ( flag == XmlParserFlags.expect_value ) { 
 
                             current_attr[1] = token.lexeme;
-                            is_value = false;
+                            AccumulateAttribute( current_attr );
+                            flag = XmlParserFlags.expect_attr;
 
-                        } else if ( is_attr ) {
+                        } 
+                        
+                        if ( flag == XmlParserFlags.expect_attr ) {
 
                             current_attr[0] = token.lexeme;
+                            flag = XmlParserFlags.expect_equal;
 
-                        } else {
+                        } 
 
-                            if ( is_opening ) { 
-                                current_element = token.lexeme;
-                                is_attr = true;
-                            }
+                        if ( flag == XmlParserFlags.is_opening ) { 
+
+                            current_element = token.lexeme;
+                            flag = XmlParserFlags.expect_attr;
+                            
                         }
 
                     }
 
                     if ( token.type == ">" || token.type == "/>" ) {
 
-                        
-
-                        if ( is_opening ) { 
-                            AddElement( current_element );
+                        if ( flag == XmlParserFlags.expect_attr ) { 
+                            AddElement( current_element , this.all_attributes );
+                            inserted = true;
+                            ResetAttributes();
+                            flag = XmlParserFlags.idle;
                         }
 
-                        if ( is_closing ) { 
+                        if ( flag == XmlParserFlags.is_closing ) { 
+                            if ( !inserted ) { 
+                                AddElement ( current_element , this.all_attributes );
+                                inserted = true;
+                                ResetAttributes();
+                                flag = XmlParserFlags.idle;
+                            }
+                            
                             BackToParent();
+                                
                         }
 
-                        is_attr = false;
-                        // reset attributes
+                        
 
                     }
 

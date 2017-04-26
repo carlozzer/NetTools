@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Net;
 using NetParser;
+using System.Xml;
 using System.Diagnostics;
 
 namespace ParserTest
@@ -46,10 +47,14 @@ namespace ParserTest
 
             XmlParser parser = new XmlParser();
             parser.Parse( lexer.GetTokens() );
-            parser.TraceTree();
+            //parser.TraceTree();
 
             // ASSERT
-            Assert.AreEqual(1,1);
+            XmlDocument actual = parser.Tree;
+            XmlDocument expected = new XmlDocument();
+            expected.LoadXml( markup );
+
+            Assert.AreEqual( actual.OuterXml , expected.OuterXml );
 
         }
     }
