@@ -40,12 +40,18 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Caml\CamlContainer.cs" />
+    <Compile Include="Caml\CamlHelper.cs" />
     <Compile Include="Caml\CamlQueryWhere.cs" />
     <Compile Include="Caml\CamlQuery.cs" />
     <Compile Include="Caml\CamlQueryOperator.cs" />
     <Compile Include="Markup %28obsolete%29\MarkupParser.cs" />
     <Compile Include="Markup %28obsolete%29\MarkupStates.cs" />
+    <Compile Include="Pdf\DicEntry.cs" />
+    <Compile Include="Pdf\DicNode.cs" />
     <Compile Include="Pdf\PdfLexer.cs" />
+    <Compile Include="Pdf\PdfObject.cs" />
+    <Compile Include="Pdf\PdfParser.cs" />
     <Compile Include="Pdf\PdfStateTransition.cs" />
     <Compile Include="Pdf\PdfToken.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

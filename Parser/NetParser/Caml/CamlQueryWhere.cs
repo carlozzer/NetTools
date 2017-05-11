@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NetParser.Caml
+namespace TC.Framework.SharePoint.Caml
 {
     public class CamlQueryWhere
     {
